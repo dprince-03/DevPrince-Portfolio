@@ -141,3 +141,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+
+TODO.md
+security test.md
+project structure.md
+.claude/
+docs/
