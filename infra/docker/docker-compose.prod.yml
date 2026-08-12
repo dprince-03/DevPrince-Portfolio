@@ -1,0 +1,78 @@
+# Prod overlay — explicit only, never auto-merged:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Builds real images from source, publishes nothing but nginx (80/443), and
+# puts client + server behind a single reverse-proxied origin.
+services:
+  server:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.server
+    restart: unless-stopped
+    env_file:
+      - ../../server/.env
+    environment:
+      NODE_ENV: production
+      # No password default here on purpose: compose refuses to start prod
+      # without a real POSTGRES_PASSWORD (set it in infra/docker/.env, which
+      # is gitignored — see infra/docker/.env.example).
+      DATABASE_URL: postgresql://${POSTGRES_USER:-devprince}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in infra/docker/.env before running the prod stack}@postgres:5432/${POSTGRES_DB:-devprince_portfolio}?schema=public
+      COOKIE_SECURE: "true"
+      CLIENT_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost}
+    expose:
+      - "5000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.client
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      # Empty on purpose: browser requests stay same-origin through nginx,
+      # so no CORS is needed between client and server in production.
+      NEXT_PUBLIC_API_URL: ""
+      API_INTERNAL_URL: http://server:5000
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      server:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/proxy_params.conf:/etc/nginx/proxy_params.conf:ro
+      - ../nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_certs:/etc/letsencrypt:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      server:
+        condition: service_healthy
+      client:
+        condition: service_healthy
+
+volumes:
+  certbot_www:
+  certbot_certs:

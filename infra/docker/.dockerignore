@@ -1,0 +1,13 @@
+# Build context is the repo root; keep this broad since it applies to both
+# server/ and client/ builds.
+**/node_modules
+**/.next
+**/.env
+**/.env.local
+!**/.env.example
+!**/.env.local.example
+**/.git
+**/npm-debug.log*
+**/coverage
+docs
+.claude
