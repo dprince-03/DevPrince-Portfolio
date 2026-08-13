@@ -148,3 +148,8 @@ security test.md
 project structure.md
 .claude/
 docs/
+# .github/
+
+# Uploaded media (local disk storage for the admin media manager / resume)
+server/uploads/*
+!server/uploads/.gitkeep

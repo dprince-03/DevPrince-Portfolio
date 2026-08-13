@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETE
+}
+
+enum DocNodeType {
+  FILE
+  FOLDER
+}
+
+enum SkillCategory {
+  LANGUAGE
+  FRAMEWORK
+  TOOL
+  PLATFORM
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  totpSecret   String
+  totpEnabled  Boolean  @default(true)
+  // Bumped to invalidate every outstanding session at once (e.g. suspected
+  // token theft) without needing a server-side session/token store.
+  sessionVersion Int    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  summary     String
+  description String        @default("")
+  techStack   String[]      @default([])
+  repoUrl     String?
+  liveUrl     String?
+  coverImage  String?
+  status      ProjectStatus @default(NOT_STARTED)
+  featured    Boolean       @default(false)
+  order       Int           @default(0)
+  docs        ProjectDoc[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ProjectDoc {
+  id        String      @id @default(cuid())
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  parent    ProjectDoc? @relation("DocChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId  String?
+  children  ProjectDoc[] @relation("DocChildren")
+  name      String
+  type      DocNodeType
+  content   String      @default("")
+  order     Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Skill {
+  id       String        @id @default(cuid())
+  name     String
+  category SkillCategory
+  slug     String        @default("")
+  order    Int           @default(0)
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Visit {
+  id        String   @id @default(cuid())
+  cookieId  String
+  path      String
+  referrer  String?
+  userAgent String?
+  country   String?
+  createdAt DateTime @default(now())
+}
+
+model SiteSetting {
+  key   String @id
+  value String
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  filename  String
+  url       String
+  mimeType  String
+  size      Int
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  detail    String   @default("")
+  createdAt DateTime @default(now())
+}

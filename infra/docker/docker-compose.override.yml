@@ -1,0 +1,44 @@
+# Dev overlay — auto-merged by `docker compose up` when run from this directory,
+# or explicitly with `-f docker-compose.yml -f docker-compose.override.yml`.
+# Runs server/client from source with hot reload; nginx is NOT used in dev
+# (talk to the client and server directly on their published ports).
+services:
+  server:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npx prisma generate && npx prisma migrate deploy && npm run dev"
+    env_file:
+      - ../../server/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-devprince}:${POSTGRES_PASSWORD:-devprince}@postgres:5432/${POSTGRES_DB:-devprince_portfolio}?schema=public
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../../server:/app
+      - server_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  client:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    env_file:
+      - ../../client/.env.local
+    environment:
+      API_INTERNAL_URL: http://server:5000
+    ports:
+      # Host 3002, not the default 3000 — 3000 (and 3001) are already held by
+      # unrelated processes on this machine. Container-internal port is still
+      # the Next.js default (3000); only the host-side mapping changed.
+      - "3002:3000"
+    volumes:
+      - ../../client:/app
+      - client_node_modules:/app/node_modules
+    depends_on:
+      - server
+
+volumes:
+  server_node_modules:
+  client_node_modules:

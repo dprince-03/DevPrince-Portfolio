@@ -1,0 +1,23 @@
+# Base stack — shared by dev and prod. On its own this only brings up Postgres;
+# see docker-compose.override.yml (dev, auto-merged) and docker-compose.prod.yml
+# (prod, explicit -f) for the app services.
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-devprince}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devprince}
+      POSTGRES_DB: ${POSTGRES_DB:-devprince_portfolio}
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devprince} -d ${POSTGRES_DB:-devprince_portfolio}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
