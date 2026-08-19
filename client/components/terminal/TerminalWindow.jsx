@@ -26,7 +26,7 @@ export default function TerminalWindow({
   return (
     <Wrapper
       {...motionProps}
-      className={`relative flex flex-col overflow-hidden rounded-xl border border-term-border bg-term-panel shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_20px_60px_-20px_rgba(0,0,0,0.8)] ${className}`}
+      className={`relative flex flex-col overflow-hidden rounded-xl border border-term-border bg-term-panel/80 backdrop-blur-md shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_20px_60px_-20px_rgba(0,0,0,0.8)] ${className}`}
     >
       <div className="flex shrink-0 items-center gap-2 border-b border-term-border px-4 py-3">
         <span className="h-3 w-3 rounded-full bg-term-red" />

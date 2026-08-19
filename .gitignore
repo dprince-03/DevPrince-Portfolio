@@ -143,12 +143,9 @@ vite.config.ts.timestamp-*
 .vite/
 
 
-TODO.md
-security test.md
-project structure.md
+CLAUDE.md
+AGENTS.md
 .claude/
-docs/
-# .github/
 
 # Uploaded media (local disk storage for the admin media manager / resume)
 server/uploads/*

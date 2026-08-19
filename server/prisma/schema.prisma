@@ -25,6 +25,11 @@ enum SkillCategory {
   PLATFORM
 }
 
+enum SocialPlatform {
+  X
+  LINKEDIN
+}
+
 model AdminUser {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -77,6 +82,14 @@ model Skill {
   category SkillCategory
   slug     String        @default("")
   order    Int           @default(0)
+}
+
+model SocialPost {
+  id        String         @id @default(cuid())
+  platform  SocialPlatform
+  url       String
+  order     Int            @default(0)
+  createdAt DateTime       @default(now())
 }
 
 model ContactMessage {

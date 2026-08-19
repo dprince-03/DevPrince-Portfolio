@@ -1,49 +1,105 @@
-import TerminalWindow from "@/components/terminal/TerminalWindow";
+"use client";
 
-// Placeholder — swap for your real name/title/email/link (later: editable
-// from the admin dashboard).
-const key = (text) => <span className="text-term-gold">&quot;{text}&quot;</span>;
-const punct = (text) => <span className="text-term-silver">{text}</span>;
-const str = (text) => <span className="text-term-green">&quot;{text}&quot;</span>;
-const link = (href, label) => (
-  <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="text-term-blue hover:underline">
-    {label}
-  </a>
-);
+import { useEffect, useState } from "react";
+import { settingsApi } from "@/lib/api";
+import { GithubIcon, LinkedinIcon, XIcon, MailIcon, PhoneIcon, PinIcon, CheckIcon } from "@/components/icons/SocialIcons";
 
-const LINES = [
-  <span key="filename" className="text-term-white">
-    business-card.json
-  </span>,
-  <span key="open">{punct("{")}</span>,
-  <span key="name">
-    &nbsp;&nbsp;{key("name")}
-    {punct(": ")}
-    {str("Your Name")}
-    {punct(",")}
-  </span>,
-  <span key="title">
-    &nbsp;&nbsp;{key("title")}
-    {punct(": ")}
-    {str("Backend & Full-Stack Developer")}
-    {punct(",")}
-  </span>,
-  <span key="email">
-    &nbsp;&nbsp;{key("email")}
-    {punct(": ")}
-    {link("mailto:you@example.com", "you@example.com")}
-    {punct(",")}
-  </span>,
-  <span key="link">
-    &nbsp;&nbsp;{key("link")}
-    {punct(": ")}
-    {link("https://yourdomain.dev", "yourdomain.dev")}
-  </span>,
-  <span key="close">{punct("}")}</span>,
+const ROWS = [
+  { key: "social_email", label: "Email", Icon: MailIcon, fallback: "you@example.com" },
+  { key: "phone", label: "Phone", Icon: PhoneIcon, fallback: "" },
+  { key: "location", label: "Location", Icon: PinIcon, fallback: "" },
+  { key: "availability", label: "Available", Icon: CheckIcon, fallback: "" },
 ];
 
 export default function ProfileCard({ className = "" }) {
-  // Full width of the page shell — right edge lines up with "contact" in
-  // the navbar, since both use the same max-w-6xl container.
-  return <TerminalWindow title="business-card.json" lines={LINES} className={className} />;
+  const [settings, setSettings] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    settingsApi
+      .list()
+      .then((data) => !cancelled && setSettings(data))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const s = settings || {};
+
+  return (
+    <div
+      className={`flex flex-col items-center rounded-2xl border border-term-border bg-term-panel/80 p-8 backdrop-blur-md ${className}`}
+    >
+      {s.profile_photo_url ? (
+        // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded, arbitrary origin
+        <img
+          src={s.profile_photo_url}
+          alt=""
+          className="h-36 w-36 flex-shrink-0 rounded-full object-cover shadow-[0_16px_40px_rgba(74,158,255,0.2)]"
+        />
+      ) : (
+        <div className="h-36 w-36 flex-shrink-0 rounded-full bg-gradient-to-br from-term-blue to-term-green/60 shadow-[0_16px_40px_rgba(74,158,255,0.2)]" />
+      )}
+
+      <p className="mt-5 text-xl font-extrabold text-term-white">{s.profile_name || "Your Name"}</p>
+
+      <p className="mt-2.5 rounded-full bg-term-bg px-4 py-1.5 text-center text-xs font-bold text-term-blue">
+        {s.tagline || "Full-Stack Developer"}
+      </p>
+
+      <div className="my-6 h-px w-full bg-term-border" />
+
+      <div className="flex w-full flex-col gap-5">
+        {ROWS.map(({ key, label, Icon, fallback }) => {
+          const value = s[key] || fallback;
+          if (!value) return null;
+          return (
+            <div key={key} className="flex items-center gap-3.5">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-term-blue/15 text-term-blue">
+                <Icon />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-term-silver-dim">{label}</p>
+                <p className="mt-0.5 text-sm font-semibold text-term-white">{value}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-7 flex gap-2.5">
+        {s.social_github && (
+          <a
+            href={s.social_github}
+            target="_blank"
+            rel="noreferrer"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-term-blue/15 text-term-blue transition-colors hover:bg-term-blue/25"
+          >
+            <GithubIcon />
+          </a>
+        )}
+        {s.social_linkedin && (
+          <a
+            href={s.social_linkedin}
+            target="_blank"
+            rel="noreferrer"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-term-blue/15 text-term-blue transition-colors hover:bg-term-blue/25"
+          >
+            <LinkedinIcon />
+          </a>
+        )}
+        {s.social_x && (
+          <a
+            href={s.social_x}
+            target="_blank"
+            rel="noreferrer"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-term-blue/15 text-term-blue transition-colors hover:bg-term-blue/25"
+          >
+            <XIcon />
+          </a>
+        )}
+      </div>
+    </div>
+  );
 }

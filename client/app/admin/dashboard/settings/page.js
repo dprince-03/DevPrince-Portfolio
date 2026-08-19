@@ -4,18 +4,29 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { settingsApi, mediaApi, authApi } from "@/lib/api";
 import AdminSection from "@/components/admin/AdminSection";
-import { TextField } from "@/components/admin/fields";
+import { TextField, TextareaField } from "@/components/admin/fields";
 import Button from "@/components/admin/Button";
 import { SkeletonTerminalCard } from "@/components/ui/Skeleton";
 
 const FIELDS = [
+  { key: "profile_name", label: "your name" },
+  { key: "profile_photo_url", label: "profile photo URL" },
   { key: "tagline", label: "tagline" },
+  { key: "phone", label: "phone" },
+  { key: "location", label: "location" },
+  { key: "availability", label: "availability (e.g. \"freelance & full-time\")" },
+  { key: "uptime_text", label: "uptime (e.g. \"shipping since 2020\")" },
   { key: "now_status", label: "\"now\" status (e.g. \"debugging auth flow\")" },
   { key: "social_github", label: "GitHub URL" },
   { key: "social_linkedin", label: "LinkedIn URL" },
   { key: "social_x", label: "X URL" },
   { key: "social_email", label: "contact email" },
   { key: "github_username", label: "GitHub username (for live stats)" },
+];
+
+const ABOUT_FIELDS = [
+  { key: "about_bio", label: "about bio (a few paragraphs)", rows: 6 },
+  { key: "about_interests", label: "interests (comma-separated)" },
 ];
 
 export default function SettingsPage() {
@@ -101,6 +112,28 @@ export default function SettingsPage() {
             <TextField key={key} id={key} label={label} value={form[key] || ""} onChange={set(key)} />
           ))}
           {error && <p className="text-sm text-term-red">error: {error}</p>}
+          <Button type="submit" disabled={saving}>
+            {saving ? "saving..." : "save settings"}
+          </Button>
+        </form>
+      </AdminSection>
+
+      <AdminSection title="about.md">
+        <form onSubmit={handleSave} className="space-y-4">
+          {ABOUT_FIELDS.map(({ key, label, rows }) =>
+            rows ? (
+              <TextareaField
+                key={key}
+                id={key}
+                label={label}
+                rows={rows}
+                value={form[key] || ""}
+                onChange={set(key)}
+              />
+            ) : (
+              <TextField key={key} id={key} label={label} value={form[key] || ""} onChange={set(key)} />
+            )
+          )}
           <Button type="submit" disabled={saving}>
             {saving ? "saving..." : "save settings"}
           </Button>
