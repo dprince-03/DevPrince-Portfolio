@@ -97,4 +97,15 @@ export const contactApi = {
   submit: (data) => apiFetch("/api/contact", { method: "POST", body: json(data) }),
 };
 
+export const githubApi = {
+  contributions: () => apiFetch("/api/github/contributions"),
+};
+
+export const postsApi = {
+  list: () => apiFetch("/api/posts"),
+  create: (data) => apiFetch("/api/posts", { method: "POST", body: json(data) }),
+  update: (id, data) => apiFetch(`/api/posts/${id}`, { method: "PUT", body: json(data) }),
+  remove: (id) => apiFetch(`/api/posts/${id}`, { method: "DELETE" }),
+};
+
 export { API_URL };
