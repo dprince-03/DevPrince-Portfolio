@@ -65,7 +65,7 @@ export default function FileTree({ docs }) {
 
   return (
     <div className="grid gap-4 md:grid-cols-[240px_1fr]">
-      <div className="rounded-xl border border-term-border bg-term-panel p-3">
+      <div className="rounded-xl border border-term-border bg-term-panel/80 p-3 backdrop-blur-md">
         {tree.map((node) => (
           <TreeNode key={node.id} node={node} depth={0} selectedId={selected?.id} onSelect={setSelected} />
         ))}

@@ -33,7 +33,7 @@ export default function SystemInfo({ className = "" }) {
         <span className="flex-1 text-center text-xs text-term-silver-dim">zsh &mdash; portfolio</span>
       </div>
 
-      <div className="flex flex-1 flex-col justify-center p-8">
+      <div className="flex flex-1 flex-col p-8">
         <p className="mb-4 text-sm text-term-green">
           you<span className="text-term-blue">@</span>portfolio
           <span className="text-term-silver-dim">:</span>
