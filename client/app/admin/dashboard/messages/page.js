@@ -42,8 +42,19 @@ export default function MessagesPage() {
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-sm text-term-white">
-                        {message.name}{" "}
-                        <span className="text-term-silver-dim">&lt;{message.email}&gt;</span>
+                        {message.firstName} {message.lastName}{" "}
+                        <span className="text-term-silver-dim">
+                          &lt;{message.channel === "WHATSAPP" ? message.phone : message.email}&gt;
+                        </span>
+                        <span
+                          className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                            message.channel === "WHATSAPP"
+                              ? "bg-term-green/15 text-term-green"
+                              : "bg-term-blue/15 text-term-blue"
+                          }`}
+                        >
+                          {message.channel === "WHATSAPP" ? "whatsapp" : "email"}
+                        </span>
                       </p>
                       <p className="text-[10px] text-term-silver-dim">
                         {new Date(message.createdAt).toLocaleString()}
@@ -57,7 +68,15 @@ export default function MessagesPage() {
                       mark {message.read ? "unread" : "read"}
                     </button>
                   </div>
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-term-silver">{message.message}</p>
+                  <p className="mt-2 text-sm text-term-silver">
+                    wants to{" "}
+                    <span className={message.purpose === "HIRE" ? "text-term-green" : "text-term-blue"}>
+                      {message.purpose === "HIRE" ? "hire" : "consult"}
+                    </span>
+                  </p>
+                  {message.message && (
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-term-silver">{message.message}</p>
+                  )}
                 </div>
               ))}
             </div>

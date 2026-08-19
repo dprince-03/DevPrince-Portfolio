@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { settingsApi } from "@/lib/api";
-import { GithubIcon, LinkedinIcon, XIcon, MailIcon, PhoneIcon, PinIcon, CheckIcon } from "@/components/icons/SocialIcons";
+import {
+  GithubIcon,
+  LinkedinIcon,
+  XIcon,
+  WhatsappIcon,
+  MailIcon,
+  PhoneIcon,
+  PinIcon,
+  CheckIcon,
+} from "@/components/icons/SocialIcons";
 
 const ROWS = [
   { key: "social_email", label: "Email", Icon: MailIcon, fallback: "you@example.com" },
@@ -97,6 +106,16 @@ export default function ProfileCard({ className = "" }) {
             className="flex h-9 w-9 items-center justify-center rounded-full bg-term-blue/15 text-term-blue transition-colors hover:bg-term-blue/25"
           >
             <XIcon />
+          </a>
+        )}
+        {s.social_whatsapp && (
+          <a
+            href={`https://wa.me/${s.social_whatsapp}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-term-blue/15 text-term-blue transition-colors hover:bg-term-blue/25"
+          >
+            <WhatsappIcon />
           </a>
         )}
       </div>

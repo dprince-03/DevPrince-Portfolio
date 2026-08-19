@@ -1,19 +1,37 @@
-import { WhatsappIcon, XIcon, LinkedinIcon, GithubIcon, InstagramIcon } from "@/components/icons/SocialIcons";
+"use client";
 
-// Placeholder — swap for your real profile URLs.
-const SOCIALS = [
-  { label: "WhatsApp", href: "https://wa.me/10000000000", Icon: WhatsappIcon },
-  { label: "X", href: "https://x.com/", Icon: XIcon },
-  { label: "LinkedIn", href: "https://linkedin.com/in/", Icon: LinkedinIcon },
-  { label: "GitHub", href: "https://github.com/", Icon: GithubIcon },
-  { label: "Instagram", href: "https://instagram.com/", Icon: InstagramIcon },
-];
+import { useEffect, useState } from "react";
+import { WhatsappIcon, XIcon, LinkedinIcon, GithubIcon } from "@/components/icons/SocialIcons";
+import { settingsApi } from "@/lib/api";
 
 // Sits directly above the fixed StatusBar (bottom-7 = StatusBar's own height).
 export default function SocialFooter() {
+  const [settings, setSettings] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    settingsApi
+      .list()
+      .then((data) => !cancelled && setSettings(data))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const s = settings || {};
+  const socials = [
+    s.social_whatsapp && { label: "WhatsApp", href: `https://wa.me/${s.social_whatsapp}`, Icon: WhatsappIcon },
+    s.social_x && { label: "X", href: s.social_x, Icon: XIcon },
+    s.social_linkedin && { label: "LinkedIn", href: s.social_linkedin, Icon: LinkedinIcon },
+    s.social_github && { label: "GitHub", href: s.social_github, Icon: GithubIcon },
+  ].filter(Boolean);
+
+  if (socials.length === 0) return null;
+
   return (
     <div className="fixed inset-x-0 bottom-7 z-20 flex h-9 items-center justify-center gap-5 border-t border-term-border bg-term-panel px-4">
-      {SOCIALS.map(({ label, href, Icon }) => (
+      {socials.map(({ label, href, Icon }) => (
         <a
           key={label}
           href={href}
