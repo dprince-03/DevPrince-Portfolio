@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import TerminalWindow from "@/components/terminal/TerminalWindow";
 import { Cm, Kw, Ty, Str, Pu, Section } from "@/components/code/tokens";
-import { settingsApi, API_URL } from "@/lib/api";
+import { settingsApi, skillsApi, API_URL } from "@/lib/api";
 
 // Placeholder — swap for real history (later: editable from the admin dashboard).
 const FORMATIONS = [
@@ -22,12 +22,16 @@ const EXPERIENCES = [
 
 export default function ResumeTerminal({ className = "" }) {
   const [resumeUrl, setResumeUrl] = useState(null);
+  const [skills, setSkills] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    settingsApi
-      .list()
-      .then((settings) => !cancelled && setResumeUrl(settings.resume_url || null))
+    Promise.all([settingsApi.list(), skillsApi.list()])
+      .then(([settings, skillsData]) => {
+        if (cancelled) return;
+        setResumeUrl(settings.resume_url || null);
+        setSkills(skillsData);
+      })
       .catch(() => {});
     return () => {
       cancelled = true;
@@ -91,6 +95,22 @@ export default function ResumeTerminal({ className = "" }) {
         <Cm>{"// see also: me.go — information, platforms, languages, tools"}</Cm>
       </pre>
 
+      {skills?.length > 0 && (
+        <div className="mt-6 border-t border-term-border pt-5">
+          <p className="text-xs uppercase tracking-widest text-term-silver-dim">{"// skills"}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {skills.map((skill) => (
+              <span
+                key={skill.id}
+                className="rounded-full border border-term-border bg-term-bg px-3 py-1 text-xs font-semibold text-term-white"
+              >
+                {skill.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mt-6 border-t border-term-border pt-4">
         <p className="text-xs uppercase tracking-widest text-term-silver-dim">{"// download"}</p>
         {resumeUrl ? (
@@ -100,7 +120,7 @@ export default function ResumeTerminal({ className = "" }) {
             rel="noreferrer"
             className="mt-3 inline-block rounded-md bg-term-blue/90 px-4 py-2 text-sm font-semibold text-term-bg transition hover:bg-term-blue"
           >
-            download resume.pdf
+            $ open resume.pdf
           </a>
         ) : (
           <p className="mt-3 text-sm text-term-silver-dim">No resume uploaded yet.</p>
