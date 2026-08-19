@@ -1,17 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { contactApi, settingsApi } from "@/lib/api";
-import { GithubIcon, LinkedinIcon, XIcon, MailIcon, PinIcon, CheckIcon } from "@/components/icons/SocialIcons";
-
-const inputClass =
-  "w-full rounded-lg border border-term-border bg-term-bg px-3.5 py-2.5 text-sm text-term-white outline-none focus:border-term-blue";
-const labelClass = "mb-2 block text-[11px] font-bold uppercase tracking-wider text-term-blue";
+import { settingsApi } from "@/lib/api";
+import ContactFlipCard from "@/components/contact/ContactFlipCard";
+import { GithubIcon, LinkedinIcon, XIcon, WhatsappIcon, MailIcon, PinIcon, CheckIcon } from "@/components/icons/SocialIcons";
 
 export default function ContactPage() {
-  const [form, setForm] = useState({ name: "", email: "", message: "" });
-  const [status, setStatus] = useState("idle"); // idle | loading | success | error
-  const [error, setError] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
   const [settings, setSettings] = useState({});
 
   useEffect(() => {
@@ -25,24 +20,6 @@ export default function ContactPage() {
     };
   }, []);
 
-  function update(field) {
-    return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setStatus("loading");
-    setError("");
-    try {
-      await contactApi.submit(form);
-      setStatus("success");
-      setForm({ name: "", email: "", message: "" });
-    } catch (err) {
-      setError(err.message);
-      setStatus("error");
-    }
-  }
-
   return (
     <main className="mx-auto max-w-6xl px-6 pb-20 pt-4 sm:pb-24">
       <p className="text-sm text-term-green">
@@ -53,71 +30,8 @@ export default function ContactPage() {
       </p>
 
       <div className="mt-10 flex flex-col gap-8 lg:flex-row lg:items-start">
-        <div className="flex-1 overflow-hidden rounded-2xl border border-term-border bg-term-panel/80 backdrop-blur-md">
-          <div className="flex items-center gap-2 border-b border-term-border bg-term-bg/60 px-5 py-3.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-term-red" />
-            <span className="h-2.5 w-2.5 rounded-full bg-term-gold" />
-            <span className="h-2.5 w-2.5 rounded-full bg-term-green" />
-            <span className="flex-1 text-center text-xs text-term-silver-dim">compose &mdash; new message</span>
-          </div>
-
-          <div className="p-8">
-            {status === "success" ? (
-              <p className="text-term-green">
-                <span className="text-term-silver-dim">$</span> message sent &mdash; thanks, I&apos;ll get back to
-                you soon.
-              </p>
-            ) : (
-              <form className="space-y-5" onSubmit={handleSubmit}>
-                <div>
-                  <label className={labelClass} htmlFor="to">
-                    to
-                  </label>
-                  <p className="text-sm text-term-silver-dim">{settings.social_email || "you@example.com"}</p>
-                </div>
-                <div>
-                  <label className={labelClass} htmlFor="name">
-                    name
-                  </label>
-                  <input id="name" required value={form.name} onChange={update("name")} className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass} htmlFor="email">
-                    from
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    value={form.email}
-                    onChange={update("email")}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className={labelClass} htmlFor="message">
-                    message
-                  </label>
-                  <textarea
-                    id="message"
-                    required
-                    rows={5}
-                    value={form.message}
-                    onChange={update("message")}
-                    className={inputClass}
-                  />
-                </div>
-                {status === "error" && <p className="text-sm text-term-red">error: {error}</p>}
-                <button
-                  type="submit"
-                  disabled={status === "loading"}
-                  className="w-full rounded-lg bg-term-blue py-3 text-sm font-bold text-term-bg transition hover:opacity-90 disabled:opacity-50"
-                >
-                  {status === "loading" ? "sending..." : "$ send --now"}
-                </button>
-              </form>
-            )}
-          </div>
+        <div className="flex-1">
+          <ContactFlipCard onSuccess={() => setShowConfirm(true)} />
         </div>
 
         <div className="w-full flex-shrink-0 rounded-2xl border border-term-border bg-term-panel/80 p-7 backdrop-blur-md lg:w-[300px]">
@@ -162,6 +76,16 @@ export default function ContactPage() {
           <div className="my-6 h-px w-full bg-term-border" />
 
           <div className="flex gap-2.5">
+            {settings.social_whatsapp && (
+              <a
+                href={`https://wa.me/${settings.social_whatsapp}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-term-blue/15 text-term-blue transition-colors hover:bg-term-blue/25"
+              >
+                <WhatsappIcon />
+              </a>
+            )}
             {settings.social_github && (
               <a
                 href={settings.social_github}
@@ -195,6 +119,30 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
+
+      {showConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6"
+          onClick={() => setShowConfirm(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-term-border bg-term-panel p-8 text-center shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-term-green/15 text-term-green">
+              <CheckIcon width={22} height={22} />
+            </div>
+            <p className="mt-4 text-base font-semibold text-term-white">I&apos;ll reach out to you shortly.</p>
+            <button
+              type="button"
+              onClick={() => setShowConfirm(false)}
+              className="mt-6 w-full rounded-lg bg-term-blue py-2.5 text-sm font-bold text-term-bg transition hover:opacity-90"
+            >
+              close
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
