@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/admin/dashboard", label: "overview", exact: true },
   { href: "/admin/dashboard/projects", label: "projects" },
   { href: "/admin/dashboard/skills", label: "skills" },
+  { href: "/admin/dashboard/resume", label: "resume" },
   { href: "/admin/dashboard/messages", label: "messages" },
   { href: "/admin/dashboard/posts", label: "posts" },
   { href: "/admin/dashboard/media", label: "media" },
