@@ -18,6 +18,7 @@ const exportRoutes = require("./routes/export.routes");
 const activityRoutes = require("./routes/activity.routes");
 const githubRoutes = require("./routes/github.routes");
 const postsRoutes = require("./routes/posts.routes");
+const resumeRoutes = require("./routes/resume.routes");
 const errorHandler = require("./middleware/errorHandler");
 const { authLimiter } = require("./middleware/rateLimit");
 const { UPLOAD_DIR } = require("./lib/upload");
@@ -79,6 +80,7 @@ app.use("/api/export", exportRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/github", githubRoutes);
 app.use("/api/posts", postsRoutes);
+app.use("/api/resume", resumeRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found" });
