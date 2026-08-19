@@ -25,9 +25,12 @@ export default async function ProjectDetailPage({ params }) {
   if (!project) notFound();
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
-      <p className="text-xs uppercase tracking-widest text-term-silver-dim">
-        $ cd ~/projects/{project.slug}
+    <main className="mx-auto max-w-6xl px-6 pb-20 pt-4 sm:pb-24">
+      <p className="text-sm text-term-green">
+        you<span className="text-term-blue">@</span>portfolio
+        <span className="text-term-silver-dim">:</span>
+        <span className="text-term-blue">~/projects/{project.slug}</span>
+        <span className="text-term-silver-dim">$</span> cd .
       </p>
 
       <div className="mt-2 flex flex-wrap items-center gap-3">

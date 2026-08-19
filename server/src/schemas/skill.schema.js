@@ -1,6 +1,6 @@
 const { z } = require("zod");
 
-const categoryEnum = z.enum(["LANGUAGE", "FRAMEWORK", "TOOL", "PLATFORM"]);
+const categoryEnum = z.enum(["LANGUAGE", "FRAMEWORK", "DATABASE", "TOOL", "PLATFORM"]);
 
 const createSkillSchema = z.object({
   name: z.string().min(1).max(60),

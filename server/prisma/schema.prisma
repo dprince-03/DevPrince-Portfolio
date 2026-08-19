@@ -21,6 +21,7 @@ enum DocNodeType {
 enum SkillCategory {
   LANGUAGE
   FRAMEWORK
+  DATABASE
   TOOL
   PLATFORM
 }
@@ -28,6 +29,16 @@ enum SkillCategory {
 enum SocialPlatform {
   X
   LINKEDIN
+}
+
+enum ContactPurpose {
+  HIRE
+  CONSULT
+}
+
+enum ContactChannel {
+  WHATSAPP
+  EMAIL
 }
 
 model AdminUser {
@@ -84,6 +95,27 @@ model Skill {
   order    Int           @default(0)
 }
 
+model Experience {
+  id        String   @id @default(cuid())
+  company   String
+  role      String
+  location  String   @default("")
+  period    String
+  bullets   String[] @default([])
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Education {
+  id        String   @id @default(cuid())
+  school    String
+  degree    String
+  location  String   @default("")
+  period    String   @default("")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model SocialPost {
   id        String         @id @default(cuid())
   platform  SocialPlatform
@@ -93,12 +125,16 @@ model SocialPost {
 }
 
 model ContactMessage {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  message   String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id        String         @id @default(cuid())
+  firstName String
+  lastName  String
+  channel   ContactChannel @default(WHATSAPP)
+  phone     String?
+  email     String?
+  purpose   ContactPurpose
+  message   String         @default("")
+  read      Boolean        @default(false)
+  createdAt DateTime       @default(now())
 }
 
 model Visit {

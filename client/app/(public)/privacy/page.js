@@ -19,8 +19,8 @@ export default function PrivacyPage() {
               enter elsewhere on the site (like the contact form).
             </p>
             <p>
-              The contact form stores what you submit (name, email, message) so it can be read and replied
-              to — nothing more.
+              The contact form stores what you submit (name, phone number, and what you&apos;re getting in
+              touch about) so it can be read and followed up on — nothing more.
             </p>
             <p>You can decline analytics entirely from the cookie banner; the rest of the site works the same either way.</p>
           </div>

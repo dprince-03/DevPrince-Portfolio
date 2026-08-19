@@ -101,6 +101,17 @@ export const githubApi = {
   contributions: () => apiFetch("/api/github/contributions"),
 };
 
+export const resumeApi = {
+  listExperience: () => apiFetch("/api/resume/experience"),
+  createExperience: (data) => apiFetch("/api/resume/experience", { method: "POST", body: json(data) }),
+  updateExperience: (id, data) => apiFetch(`/api/resume/experience/${id}`, { method: "PUT", body: json(data) }),
+  removeExperience: (id) => apiFetch(`/api/resume/experience/${id}`, { method: "DELETE" }),
+  listEducation: () => apiFetch("/api/resume/education"),
+  createEducation: (data) => apiFetch("/api/resume/education", { method: "POST", body: json(data) }),
+  updateEducation: (id, data) => apiFetch(`/api/resume/education/${id}`, { method: "PUT", body: json(data) }),
+  removeEducation: (id) => apiFetch(`/api/resume/education/${id}`, { method: "DELETE" }),
+};
+
 export const postsApi = {
   list: () => apiFetch("/api/posts"),
   create: (data) => apiFetch("/api/posts", { method: "POST", body: json(data) }),

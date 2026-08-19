@@ -20,6 +20,7 @@ const FIELDS = [
   { key: "social_github", label: "GitHub URL" },
   { key: "social_linkedin", label: "LinkedIn URL" },
   { key: "social_x", label: "X URL" },
+  { key: "social_whatsapp", label: "WhatsApp number (with country code, e.g. 2348034463989)" },
   { key: "social_email", label: "contact email" },
   { key: "github_username", label: "GitHub username (for live stats)" },
 ];

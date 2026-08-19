@@ -1,8 +1,17 @@
 const prisma = require("../lib/prisma");
+const { sendWhatsAppNotification, sendEmailNotification } = require("../lib/notify");
 
 async function create(req, res) {
   const message = await prisma.contactMessage.create({ data: req.body });
   res.status(201).json({ id: message.id });
+
+  // Notify after responding — a slow/failed notification should never hold
+  // up or break the visitor's submission, which is already safely stored.
+  if (message.channel === "WHATSAPP") {
+    sendWhatsAppNotification(message).catch(() => {});
+  } else {
+    sendEmailNotification(message).catch(() => {});
+  }
 }
 
 async function list(req, res) {
