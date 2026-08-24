@@ -1,0 +1,28 @@
+name: CD
+
+# Runs only after CI has finished on main, and only deploys if CI passed —
+# a push straight to main that fails CI never reaches the server.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.DEPLOY_PATH }}
+            git fetch origin main
+            git reset --hard origin/main
+            docker compose -f infra/docker/docker-compose.yml -f infra/docker/docker-compose.prod.yml up -d --build
+            docker compose -f infra/docker/docker-compose.yml -f infra/docker/docker-compose.prod.yml exec -T server npx prisma migrate deploy
