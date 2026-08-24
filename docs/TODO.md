@@ -114,4 +114,16 @@ Explicitly declined (see `docs/PLAN.md`): boot-sequence splash, interactive home
 - [ ] Choose hosting target, register a domain, provision a real TLS cert (uncomment the HTTPS block in `infra/nginx/conf.d/default.conf`) — **needs your own hosting/domain decision, not something I can do for you**
 - [x] Postgres volume backup strategy — `infra/docker/backup.sh` (manual or cron `pg_dump`, gzip'd, with restore instructions)
 - [x] Dependency vulnerability scanning in CI — `.github/workflows/ci.yml` (npm audit + build/boot smoke test) + `.github/dependabot.yml`
+- [~] CD workflow (`.github/workflows/cd.yml`) — SSH-deploys to a VPS after CI passes on `main` (`git reset --hard` + `docker compose up -d --build` + `prisma migrate deploy`). Written and ready, but **inert until you provision a VPS and add four repo secrets** — see the note below.
 - [ ] Re-run the full `security-checklist.md` checklist before going live — do this once a real deployment target exists
+
+### Activating `cd.yml`
+
+Once you've provisioned a VPS (Docker + Docker Compose installed, this repo cloned once by hand, `server/.env` and `infra/docker/.env` created there with real production secrets — none of that travels through CI), add these four repo secrets (Settings → Secrets and variables → Actions):
+
+- `DEPLOY_HOST` — the VPS's IP or hostname
+- `DEPLOY_USER` — the SSH user to deploy as
+- `DEPLOY_SSH_KEY` — a private key whose public half is authorized on that user's `~/.ssh/authorized_keys`; generate a dedicated deploy key, don't reuse a personal one
+- `DEPLOY_PATH` — the absolute path of the cloned repo on the VPS (e.g. `/home/deploy/DevPrince-Portfolio`)
+
+The next push to `main` after that (once CI passes) will deploy automatically. Nothing else needs to change.
