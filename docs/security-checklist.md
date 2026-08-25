@@ -1,7 +1,7 @@
 # Security Test Plan
 
 Living checklist for this project's security posture. Status reflects what's
-actually implemented as of Phase 6 (see `TODO.md`) — re-check every item
+actually implemented as of Phase 7 (see `TODO.md`) — re-check every item
 against the code before trusting a ✅, this file doesn't update itself.
 
 Legend: ✅ implemented · ⚠️ partial / needs attention · ❌ not built yet
@@ -44,7 +44,7 @@ Confirm the `Set-Cookie` header never includes `Secure` when testing over plain 
 
 ## 2. Authorization
 
-- ✅ `requireAuth` guards every admin write route that exists today: `projects`/`docs` (POST/PUT/DELETE), `skills` (POST/PUT/DELETE), `settings` (PUT), `media` (all), `messages` (GET/PATCH), `analytics/summary` (GET), `export` (GET), `activity` (GET), `auth/logout-all`. Public routes are deliberately open: `GET` on `projects`/`docs`/`skills`, `POST /api/contact`, `POST /api/analytics/pageview`.
+- ✅ `requireAuth` guards every admin write route that exists today: `projects`/`docs` (POST/PUT/DELETE), `skills` (POST/PUT/DELETE), `resume/experience`/`resume/education` (POST/PUT/DELETE), `posts` (POST/PUT/DELETE), `settings` (PUT), `media` (all), `messages` (GET/PATCH), `analytics/summary` (GET), `export` (GET), `activity` (GET), `auth/logout-all`. Public routes are deliberately open: `GET` on `projects`/`docs`/`skills`/`resume/experience`/`resume/education`/`posts`, `GET /api/github/contributions` (safe to be public — it only ever returns the configured `github_username`'s already-public contribution data; the `GITHUB_TOKEN` itself never leaves the server), `POST /api/contact`, `POST /api/analytics/pageview`.
 - ⚠️ No automated test enforces this — it's easy to forget `requireAuth` on a new route. Worth a quick script asserting 401 on every mutating endpoint without a cookie before adding more routes.
 
 ## 3. Input validation / injection
@@ -61,6 +61,7 @@ curl -X POST localhost:5000/api/contact -H 'Content-Type: application/json' -d '
 
 - ✅ React escapes rendered text by default — safe as long as `dangerouslySetInnerHTML` is never used for user- or admin-supplied content. Verified: nowhere in the codebase uses it. `ProjectDoc.content` renders as plain text inside a `<pre>` on both the public `FileTree` and the admin `DocsEditor` — no markdown/HTML rendering exists yet, so there's no raw-HTML-injection surface to worry about until one is added.
 - ⚠️ SVG uploads (`media`) can embed `<script>` — mitigated by Helmet's default CSP on the `/uploads` static route (`script-src 'self'`, `object-src 'none'`) rather than disabling CSP for convenience. See §10.
+- ⚠️ **New in Phase 7**: `SocialPosts.jsx` (About page) loads a real third-party script (`platform.twitter.com/widgets.js`) and renders admin-supplied URLs as a LinkedIn iframe (`linkedin.com/embed/feed/update/...`). Both are only ever populated from URLs the *admin* pastes through `requireAuth`-guarded routes — a public visitor has no path to inject a URL here, so this isn't a public XSS surface. It is, however, the site's only outbound third-party script load; the Next.js app itself sets no CSP of its own (only the Express API does, via Helmet, and that CSP doesn't cover client-rendered pages) — worth revisiting if a stricter client-side CSP is ever wanted, since `widgets.js` would need an explicit allowance.
 - **Test**: submit `<script>alert(1)</script>` through the contact form and doc editor; confirm it renders as inert text everywhere it's displayed (public pages *and* the admin dashboard) — and if a markdown renderer is ever added for docs, re-test specifically against that.
 
 ## 5. CSRF
@@ -91,6 +92,8 @@ curl -i -H "Origin: http://localhost:4321" localhost:5000/api/projects
 
 - ✅ `JWT_SECRET`, `ADMIN_PASSWORD`, `DATABASE_URL`, Postgres credentials all live in gitignored `.env` files (`server/.env`, `infra/docker/.env`) — only `.env.example` files are tracked.
 - ✅ `docker-compose.prod.yml` has **no** password default for Postgres — `${POSTGRES_PASSWORD:?...}` — compose refuses to start prod without a real value.
+- ✅ Newer optional secrets follow the same pattern — `GITHUB_TOKEN`, `WHATSAPP_TOKEN`, `RESEND_API_KEY` all live only in `server/.env`, are only ever read server-side (`github.controller.js`, `lib/notify.js`), and are never sent to the client in any API response. All three degrade to a silent no-op (`console.warn`, feature just doesn't render/fire) rather than an error if unset — see `docs/PLAN.md` Phase 7 notes.
+- ✅ `cd.yml`'s `DEPLOY_SSH_KEY` is a GitHub Actions repo secret, never written to disk in the repo — generate it as a dedicated deploy-only key, not a reused personal one, and scope its `authorized_keys` entry to only what the deploy script needs if the VPS supports command-restricted keys.
 - **Test before ever pushing**:
 ```bash
 git log -p --all -- '*.env' '**/.env'      # must return nothing
@@ -107,6 +110,7 @@ cd server && npm audit
 - ✅ CI now runs `npm audit --audit-level=high` on every push/PR for both `client` and `server` (`.github/workflows/ci.yml`), plus a real `next build` and a server boot+health-check smoke test against a real Postgres service container.
 - ✅ `.github/dependabot.yml` — weekly update PRs for both npm workspaces, the Docker images, and the Actions themselves.
 - Note: geoip-lite was initially pulled in at a version with a transitive `ip-address` vulnerability (XSS + SSRF/octal-parsing) — caught by `npm audit` immediately after install and fixed by pinning `geoip-lite@^2.0.3` before it ever shipped. A reminder that a fresh `npm install` is not automatically clean — always audit right after adding a dependency, not just periodically.
+- Note: a Dependabot PR bumping `@prisma/client` to 7.9.1 pulled in `@prisma/config` → a vulnerable transitive `deepmerge-ts < 8.0.0` (GHSA-ggr8-5vv4-36mx, stack exhaustion on recursive object graphs), caught by CI's `npm audit --audit-level=high` gate rather than merged blind. Fixed with `"overrides": { "deepmerge-ts": "^8.0.1" }` in `server/package.json` — verified by actually simulating the Prisma 7.9.1 bump in a scratch install with the override applied and re-running `npm audit` (0 vulnerabilities), not just assumed to work.
 
 ## 10. Docker / infra
 

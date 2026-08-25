@@ -27,34 +27,26 @@ Legend: `[x]` done · `[ ]` not started · `[~]` partially done
 - [x] `docker-compose.override.yml` (dev) / `docker-compose.prod.yml` (prod) split
 - [x] nginx reverse proxy config (`infra/nginx/`) with rate-limited `/api/auth/`
 
-## Phase 2 — Public site pages
+## Phase 2 — Public site pages (superseded — see Phase 7 for the current design)
 
-Site nav is `Profile (home) / Projects / Resume / Contact` — every page except
-Projects is a single terminal-card (`TerminalWindow`); Projects uses the
-color-coded folder/grid layout instead. Structure now lives under
-`client/app/(public)/`, with `Navbar` (`client/components/layout/Navbar.jsx`)
-applied via `client/app/(public)/layout.js`.
+Original build. Nav was `Profile (home) / Projects / Resume / Contact`, every
+page a single JSON/terminal card. **This entire visual language was scrapped
+and rebuilt in Phase 7** — kept here only as history; `ProfileCard.jsx`
+(business-card.json style) still exists but was heavily changed, `ProfileTerminal.jsx`
+and `PhotoTerminal.jsx` were deleted outright.
 
-- [x] **Navbar** — profile/projects/resume/contact, active-route highlight
-- [x] **Profile page** (`client/app/(public)/page.js`) — `me.go`: information,
-      platforms, languages, tools, spoken languages, traits, media/socials
-      (`components/profile/ProfileCard.jsx`, `ProfileTerminal.jsx`), floating
-      avatar with graceful placeholder fallback (`PhotoTerminal.jsx` — drop a
-      real photo at `client/public/avatar.jpg`)
-- [x] **Resume page** (`client/app/(public)/resume/page.js`) — `resume.go`:
-      formations/experience as Go `func` blocks (`components/resume/ResumeTerminal.jsx`),
-      real download button once a CV is uploaded via the admin Settings screen
+- [x] ~~Navbar — profile/projects/resume/contact~~ → superseded, see Phase 7
+- [x] ~~Profile page — `me.go` terminal, floating avatar~~ → superseded, see Phase 7
+- [x] ~~Resume page — hardcoded formations/experience~~ → superseded, see Phase 7 (now real DB-backed data)
 - [x] **Projects page** (`client/app/(public)/projects/page.js`) — folder grid,
-      color-coded by status (blue/green/red), client-fetched from
-      `GET /api/projects` with `SkeletonFolder` loading state; explicitly NOT
-      a card, per the design rule
+      color-coded by status; still standing, though the folder visual itself
+      was rebuilt in Phase 7 (see below)
 - [x] **Project detail page** (`client/app/(public)/projects/[slug]/page.js`) —
       server-rendered, `FileTree` component (collapsible, click-to-view docs),
-      "view raw" link straight to the JSON API endpoint, 404s on unknown slug
+      "view raw" link straight to the JSON API endpoint, 404s on unknown slug;
+      restyled to match the Phase 7 look, content/behavior unchanged
   - [ ] Optional `man <project>` alternate view (NAME/SYNOPSIS/DESCRIPTION/SEE ALSO) — not built, nice-to-have
-- [x] **Contact page** (`client/app/(public)/contact/page.js`) — real form,
-      client + server validation, loading/success/error states, verified
-      end-to-end (submission lands in `ContactMessage`)
+- [x] ~~Contact page — name/email/message form~~ → superseded, see Phase 7 (now firstName/lastName/purpose/channel)
 
 ## Phase 3 — Backend: remaining API routes ✅ done
 
@@ -127,3 +119,91 @@ Once you've provisioned a VPS (Docker + Docker Compose installed, this repo clon
 - `DEPLOY_PATH` — the absolute path of the cloned repo on the VPS (e.g. `/home/deploy/DevPrince-Portfolio`)
 
 The next push to `main` after that (once CI passes) will deploy automatically. Nothing else needs to change.
+
+## Phase 7 — Full redesign + real dynamic content
+
+The original "business-card.json"/JSON-terminal visual language (Phase 2) was
+scrapped and rebuilt from scratch at the user's request, on a `redesign`
+branch off `features`. New direction: still terminal/IDE-flavored, but a
+"riced Linux desktop" aesthetic — black background with a soft blue radial
+glow, translucent glass panels (`bg-term-panel/80 backdrop-blur-md`), a
+`neofetch`-style stack panel, and Nordic/Papirus-style folder icons for
+projects (colored outline matching status, float + glow on hover). Landed in
+one pass; several follow-on branches (`stack-icons`, `cd-pipeline`) added
+features on top. Original palette (`term-red/gold/blue/green/silver/white`)
+kept throughout — only the layout/chrome changed, not the color system.
+
+- [x] **Nav** is now `Home / About / Projects / Resume / Contact` — new About
+      page added; Navbar rebuilt as a glass "workspace switcher" pill with
+      active-page dots (`components/layout/Navbar.jsx`)
+- [x] **Home page** — `ProfileCard.jsx` (photo, name, tagline, contact rows,
+      social icons, terminal title bar) beside `SystemInfo.jsx` (`neofetch`-style
+      Stack/Uptime/Status panel, Stack pulled live from the Skills API)
+- [x] **About page** (`client/app/(public)/about/page.js`, new) —
+      `AboutTerminal.jsx` (bio + interests, both settings-driven), GitHub
+      widgets (see below), and curated social-post embeds (see below).
+      `ProfileCard` also placed on the left here (and on Resume), top-aligned
+      rather than stretched since the side content varies a lot in height
+- [x] **Resume page rebuilt on real data, not hardcoded arrays** — new
+      `Experience` and `Education` Prisma models, full CRUD
+      (`server/src/routes/resume.routes.js`, `controllers/resume.controller.js`),
+      new admin screen (`admin/dashboard/resume/page.js`) to manage both plus
+      a resume title/competencies settings form. `ResumeTerminal.jsx` renders
+      real data in the established Go-pseudocode style. Deliberately kept out
+      of git — this was explicit: real work history/education live in the
+      database (admin-editable), never hardcoded into a component file
+- [x] **Contact form redesigned end to end**:
+  - Fields now `firstName`/`lastName`/`purpose` (Hire/Consult dropdown)/optional `message`,
+    plus a WhatsApp-or-Email **flip card** (`components/contact/ContactFlipCard.jsx`,
+    real CSS 3D flip via `rotateY`/`backfaceVisibility`) — the visitor picks a
+    channel, the field underneath switches (number vs. email)
+  - `ContactMessage` model rebuilt to match (`channel` enum, optional `phone`/`email`)
+  - Success is a popup modal ("I'll reach out to you shortly."), not inline text
+  - **Server-side notification dispatch** (`server/src/lib/notify.js`) — fires
+    a real WhatsApp Cloud API template message or a real Resend email
+    depending on the channel picked, fire-and-forget (never blocks or fails
+    the visitor's submission). Inert until `WHATSAPP_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID`/
+    `WHATSAPP_TO_NUMBER`/`WHATSAPP_TEMPLATE_NAME` or `RESEND_API_KEY`/`NOTIFY_EMAIL_TO`
+    are set in `server/.env` — see `server/.env.example` for exact setup steps
+  - Admin messages screen updated to show channel + the right contact detail
+- [x] **WhatsApp icon** wired everywhere the other social icons live (profile
+      card, contact sidebar, `SocialFooter.jsx`) via a new `social_whatsapp`
+      setting (`wa.me/<number>`) — `SocialFooter` also made fully dynamic
+      instead of hardcoded placeholder links
+- [x] **Live GitHub widgets, moved to the Projects page** (were briefly on
+      About, relocated per explicit request — "every info has its own page"):
+  - `GithubStats.jsx` — basic profile stats (unauthenticated REST, pre-existing)
+  - `GithubRepoStats.jsx` (new) — total stars/forks, top-5 languages, top 4
+    repos by stars (unauthenticated REST)
+  - `GithubActivity.jsx` (new) — last 7 readable public events, unauthenticated REST
+  - `GithubContributions.jsx` (new) — real contribution-graph heatmap + current
+    streak, via a **server-side proxy** (`GET /api/github/contributions`,
+    `server/src/controllers/github.controller.js`) that calls GitHub's GraphQL
+    API with a server-only `GITHUB_TOKEN` (never reaches the browser), 1hr
+    in-memory cache. Renders nothing if the token isn't set — no broken UI
+- [x] **Curated social-post embeds** (`components/profile/SocialPosts.jsx`,
+      About page) — new `SocialPost` model + admin CRUD
+      (`admin/dashboard/posts/page.js`). Deliberately *not* an API auto-pull:
+      LinkedIn's and X's real APIs don't support that for an individual
+      without paid/partner access (see `docs/PLAN.md` for the full reasoning).
+      Admin pastes a post URL; renders as X's real oEmbed widget, or a
+      LinkedIn iframe embed (activity ID parsed out of the URL, falls back to
+      a plain link if parsing fails — never a broken iframe)
+- [x] **Per-skill tech icons** (`components/icons/TechIcon.jsx`, new,
+      `react-icons`) — every skill badge (Home stack panel, Resume skills)
+      renders its real logo, not just text. Added a `DATABASE` skill category
+      (was folded into `TOOL`/`PLATFORM` before); skill data reconciled to an
+      exact list the user specified, categorized as
+      Languages/Frameworks & Libraries/Databases/Infrastructure & DevOps/Tools
+- [x] Separated the Home stack panel's short bio (`short_bio` setting) from
+      the About page's longer bio (`about_bio`) — were briefly the same field,
+      explicitly called out as wrong ("bio and about are completely different")
+- [x] `npm audit` fix: `server/package.json` `overrides.deepmerge-ts` pinned
+      to `^8.0.1` — a Dependabot PR bumping `@prisma/client` pulled in a
+      vulnerable transitive `deepmerge-ts` (GHSA-ggr8-5vv4-36mx); verified the
+      override actually fixes it by simulating the bump in a scratch install
+- [x] `.github/dependabot.yml` — added `groups` per ecosystem (client/server/docker/actions)
+      so routine minor/patch bumps land as one PR instead of one-per-package
+- [x] `.github/workflows/cd.yml` (new) — see Phase 6 above, `[~]` until a VPS + secrets exist
+- [ ] `docs/TODO.md`/`docs/PLAN.md`/`docs/project-structure.md`/`docs/security-checklist.md`
+      brought current for all of the above — this pass
