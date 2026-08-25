@@ -7,7 +7,7 @@ import { TextField, SelectField } from "@/components/admin/fields";
 import Button from "@/components/admin/Button";
 import { SkeletonTerminalCard } from "@/components/ui/Skeleton";
 
-const CATEGORIES = ["LANGUAGE", "FRAMEWORK", "DATABASE", "TOOL", "PLATFORM"];
+const CATEGORIES = ["LANGUAGE", "FRAMEWORK", "DATABASE", "TOOL", "PLATFORM", "INFRA"];
 
 export default function SkillsPage() {
   const [skills, setSkills] = useState(null);
