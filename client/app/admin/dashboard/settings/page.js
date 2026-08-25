@@ -12,6 +12,7 @@ const FIELDS = [
   { key: "profile_name", label: "your name" },
   { key: "profile_photo_url", label: "profile photo URL" },
   { key: "tagline", label: "tagline" },
+  { key: "short_bio", label: "short bio (homepage terminal panel — different from the About page bio)" },
   { key: "phone", label: "phone" },
   { key: "location", label: "location" },
   { key: "availability", label: "availability (e.g. \"freelance & full-time\")" },

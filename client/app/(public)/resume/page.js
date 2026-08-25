@@ -1,3 +1,4 @@
+import ProfileCard from "@/components/profile/ProfileCard";
 import ResumeTerminal from "@/components/resume/ResumeTerminal";
 
 export default function ResumePage() {
@@ -6,9 +7,9 @@ export default function ResumePage() {
       <p className="text-xs uppercase tracking-widest text-term-silver-dim">
         $ cat resume.go
       </p>
-      {/* Narrower than the page shell on purpose — same reasoning as contact/privacy */}
-      <div className="max-w-3xl">
-        <ResumeTerminal />
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+        <ProfileCard className="lg:w-[300px] lg:flex-shrink-0" />
+        <ResumeTerminal className="flex-1" />
       </div>
     </main>
   );
