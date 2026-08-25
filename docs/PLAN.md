@@ -60,6 +60,12 @@ infra/
 
 ## Data Model (Prisma, in `server/prisma/schema.prisma`)
 
+*(This is the original Phase 1 plan — the shape below shipped, then grew.
+`server/prisma/schema.prisma` is always the source of truth; the "Data model
+additions" bullet under **Implementation Notes (Phase 7)** near the bottom of
+this file covers what was added since: `Experience`, `Education`, `SocialPost`,
+the reshaped `ContactMessage`, and `Skill`'s `DATABASE` category.)*
+
 - `AdminUser` — email, passwordHash, totpSecret, totpEnabled
 - `Project` — title, slug, summary, description, techStack[], repoUrl, liveUrl, coverImage, status (`NOT_STARTED | IN_PROGRESS | COMPLETE` → drives folder color), featured, order, timestamps
 - `ProjectDoc` — projectId, parentId (self-relation for folder nesting), name, type (`file`/`folder`), content (markdown/text), for the Linux file-tree
@@ -158,3 +164,110 @@ touching this code again.
 - **Helmet's default CSP is kept, not disabled**, even though this is a JSON API server with no HTML pages of its own — because `/uploads` serves admin-uploaded files including SVG, which can embed `<script>`, a strict default `script-src 'self'` is real protection there, not dead weight.
 - **Matrix-rain background and cursor trail both respect `prefers-reduced-motion`** (default off if the OS/browser signals it, still user-overridable via the status-bar toggle for rain; cursor trail has no override, just an on/off from the media query) — accessibility default, not an afterthought.
 - **CI (`​.github/workflows/ci.yml`) actually spins up a real Postgres service container** and runs `prisma migrate deploy` + a server boot/health-check smoke test, not just `npm audit` — catches migration and boot-time regressions, not only dependency CVEs.
+
+## Implementation Notes (Phase 7 — full redesign, as actually built)
+
+The Phase 1 "Design System" section above (JSON-terminal cards, business-card.json
+hero) describes the *original* visual language. It was explicitly scrapped —
+"get rid of the current design and build a new one from scratch" — and rebuilt
+on a `redesign` branch. Everything in this section reflects what actually
+shipped; treat this as authoritative over the Design System section above for
+anything visual.
+
+- **New direction: "riced Linux desktop"**, not a different flavor of the same
+  JSON-card idea. Black background (`#0a0a0a`) with a soft blue radial-gradient
+  glow (`rgba(74,158,255,…)` at a few fixed positions, applied once on `body`
+  in `globals.css` — not per-page), translucent glass panels
+  (`bg-term-panel/80 backdrop-blur-md`) everywhere a card previously used a
+  flat opaque background, a `neofetch`-style system-info panel for the
+  hero's second half, and project "folders" redrawn as Nordic/Papirus-style
+  icons (tab + body, colored outline matching status, black fill, floats and
+  glows in its own color on hover). Original palette tokens
+  (`term-red/gold/blue/green/silver/white`) untouched — this was a chrome/layout
+  rebuild, not a new color system.
+- **Landed via several rounds of iteration inside a design-canvas tool**
+  (mockups, not production code) before any real component was touched — the
+  user explicitly rejected two full non-terminal directions (Editorial
+  Minimal / Kinetic Bold / Soft Studio and their blends) before "riced
+  desktop" was picked and refined. Worth remembering if a future redesign is
+  requested: proposing options as static mockups first, before writing real
+  components, avoided several rounds of wasted implementation.
+- **Data model additions**: `Experience` and `Education` (flat models, no
+  relations, `order` int for manual sequencing, `bullets String[]` on
+  `Experience`) power the Resume page instead of a hardcoded array in the
+  component — deliberately: real work history is personal data that shouldn't
+  live in a committed source file, only in the database, admin-editable like
+  everything else. `SocialPost` (`platform` enum `X`/`LINKEDIN`, just a `url` +
+  `order`) backs the curated embeds. `Skill.category` gained `DATABASE`
+  (previously databases were miscategorized under `TOOL`). `ContactMessage`
+  was reshaped twice: first to `firstName`/`lastName`/`phone`/`purpose` (enum
+  `HIRE`/`CONSULT`), then again to add `channel` (enum `WHATSAPP`/`EMAIL`) with
+  `phone`/`email` both optional (exactly one required, enforced by a Zod
+  `.refine`, not by the DB schema — Postgres has no cross-column conditional
+  constraint here worth the complexity).
+- **Why social posts are curated embeds, not an API auto-pull**: researched
+  both platforms before building anything. LinkedIn has no public API for
+  reading a user's posts without approved-partner access — the realistic
+  alternative (scraping) violates their ToS and risks the account, so it was
+  ruled out entirely. X's free API tier doesn't include meaningful read access
+  anymore; pulling a live timeline needs a paid developer plan. Both platforms
+  do offer a *free, unauthenticated embed* for one specific post the admin
+  already knows the URL to (X's `platform.twitter.com/widgets.js` oEmbed,
+  LinkedIn's `/embed/feed/update/urn:li:activity:<id>` iframe) — so the feature
+  became "admin pastes a URL, it renders as a real embed," not "auto-syncs."
+  The LinkedIn activity ID is regex-extracted from whatever URL shape the
+  admin pastes (`activity[:-](\d{10,25})`); if extraction fails it falls back
+  to a plain link rather than ever rendering a broken iframe.
+- **GitHub contribution graph goes through the server, unlike the other GitHub
+  widgets.** Repo stats/activity/basic profile stats hit GitHub's public REST
+  API directly from the browser (no auth needed, 60 req/hr/IP is plenty at
+  this scale). Contribution-calendar data isn't in the free REST API at all —
+  it's GraphQL-only and needs an authenticated request. Rather than ship a
+  token to the browser, `GET /api/github/contributions`
+  (`server/src/controllers/github.controller.js`) proxies it: reads
+  `github_username` from `SiteSetting`, calls GitHub's GraphQL API with a
+  server-only `GITHUB_TOKEN`, computes the current streak server-side, and
+  caches the result in memory for an hour. The client component renders
+  nothing at all if the endpoint 404s/503s — no error UI, no broken chart, it
+  just doesn't appear until the token is configured.
+- **Contact-form notifications are genuinely fire-and-forget.**
+  `server/src/lib/notify.js` sends after the HTTP response, not before — a
+  slow or failed WhatsApp/Resend call can never delay or break the visitor's
+  submission, which is already durably saved in `ContactMessage` regardless.
+  Both integrations no-op with a `console.warn` (not a thrown error) if their
+  env vars aren't set, which is the expected state until the user does the
+  external account setup on each platform's side — this can't be done by
+  Claude, since both need the user's own account/phone/domain.
+- **The WhatsApp/Email contact form is a real CSS 3D flip**, not a tab switch
+  with a fade — `perspective` on the outer wrapper, `rotateY(180deg)` +
+  `backfaceVisibility: hidden` on two absolutely-stacked faces, driven by a
+  `channel` state variable. Chosen after the user explicitly asked for a
+  literal flip after seeing the WhatsApp-only version and suggesting "email
+  for email, whatsapp for whatsapp… flips the card."
+- **Per-skill icons** (`components/icons/TechIcon.jsx`) use `react-icons`'
+  `si` (Simple Icons) set for almost everything, falling back to `fa6`
+  (`FaJava`, `FaAws`, `FaWindows`) for the handful of logos Simple Icons
+  doesn't carry. Lookup is by lowercased/trimmed skill name — every skill
+  name variant that could plausibly be typed (`"node.js"`, `"nodejs"`,
+  `"react.js"`, `"react"`, …) has its own map entry rather than trying to be
+  clever with fuzzy matching. Always verify a `Si*`/`Fa*` export actually
+  exists (`grep` the package's `.d.ts`) before referencing it — guessed export
+  names silently break the whole build, not just one icon.
+- **`ProfileCard` grew the same terminal title bar as the stack panel**
+  (traffic-light dots + `zsh — portfolio`), and is now placed on the left of
+  Home, About, and Resume — but with different vertical alignment on purpose.
+  Home uses `items-stretch` (the two panels are naturally close in height);
+  About/Resume use `items-start`, since their right-side content varies a lot
+  in height and stretching would leave the card awkwardly elongated with a
+  lot of empty space at the bottom.
+- **`cd.yml` triggers on `workflow_run` for `CI`, not on `push` to `main`
+  directly** — `ci.yml` already runs on push-to-main too, so gating on its
+  *result* (`github.event.workflow_run.conclusion == 'success'`) means a push
+  that fails CI can never trigger a deploy, without needing a separate
+  re-implementation of the same checks inside `cd.yml`. Deploy mechanism is
+  plain SSH (`appleboy/ssh-action`) + `git reset --hard` + `docker compose up
+  -d --build`, matching how `docker-compose.prod.yml` already builds from
+  source rather than pulling pre-built images — no container registry
+  introduced. Inert until the user provisions a VPS and adds four repo
+  secrets (`DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_SSH_KEY`/`DEPLOY_PATH`) — see
+  `TODO.md`.

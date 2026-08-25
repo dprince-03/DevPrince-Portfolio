@@ -10,8 +10,10 @@ DevPrince-Portfolio/
 │   ├── docker/      Dockerfiles + compose files for dev and prod, Postgres backup script
 │   └── nginx/       Reverse proxy config used only in prod
 ├── .github/
-│   ├── workflows/ci.yml   npm audit + build + boot smoke test, on every push/PR
-│   └── dependabot.yml     Weekly update PRs (client, server, Docker images, Actions)
+│   ├── workflows/
+│   │   ├── ci.yml         npm audit + build + boot smoke test, on every push/PR
+│   │   └── cd.yml         SSH-deploys to a VPS after CI passes on main — inert until secrets exist, see TODO.md
+│   └── dependabot.yml     Weekly update PRs, grouped by ecosystem (client, server, Docker images, Actions)
 ├── docs/
 │   ├── PLAN.md               Design system, architecture decisions, roadmap
 │   ├── TODO.md               Feature-by-feature build checklist
@@ -26,15 +28,16 @@ DevPrince-Portfolio/
 client/
 ├── app/
 │   ├── layout.js                    Root layout: JetBrains Mono font, dark theme
-│   ├── globals.css                  Tailwind entrypoint + base dark styles
+│   ├── globals.css                  Tailwind entrypoint + base dark styles + the site-wide blue radial-glow background
 │   ├── not-found.js                 Kernel-panic styled 404 (global)
 │   ├── (public)/                    Route group — Navbar + SiteChrome (rain/status bar/cursor trail/cookie banner) applied here only
 │   │   ├── layout.js
-│   │   ├── page.js                   Profile page (photo.jpg + me.go terminals, Now badge, GitHub stats)
-│   │   ├── projects/page.js          Folder grid, color-coded by status (NOT a card, by design)
+│   │   ├── page.js                   Home — ProfileCard + SystemInfo (neofetch-style stack panel), side by side
+│   │   ├── about/page.js             About (new) — AboutTerminal (bio/interests) + GitHub widgets + SocialPosts, ProfileCard on the left
+│   │   ├── projects/page.js          Folder grid, color-coded by status, riced-desktop folder icons (NOT a card, by design)
 │   │   ├── projects/[slug]/page.js   Project detail — FileTree docs viewer, "view raw" link
-│   │   ├── resume/page.js            resume.go — formations/experience, CV download once uploaded
-│   │   ├── contact/page.js           Real form → POST /api/contact
+│   │   ├── resume/page.js            resume.go — real Experience/Education/Skills from the DB, CV download; ProfileCard on the left
+│   │   ├── contact/page.js           WhatsApp/Email flip card (ContactFlipCard) + Direct sidebar + success popup
 │   │   └── privacy/page.js           Plain-language explanation of what analytics collects
 │   └── admin/
 │       ├── login/page.js             Two-step login (password → TOTP)
@@ -42,30 +45,32 @@ client/
 │           ├── layout.js             Server-verifies the session, sidebar nav (DashboardNav), logout
 │           ├── page.js               Overview — stat tiles + charts
 │           ├── projects/             list · new/ · [id]/ (form + DocsEditor + delete)
-│           ├── skills/page.js        Grouped by category, inline add/delete
-│           ├── messages/page.js      Inbox, mark read/unread
-│           ├── settings/page.js      Tagline/social links/now-status/resume upload/"log out everywhere"
+│           ├── skills/page.js        Grouped by category (incl. DATABASE), inline add/delete
+│           ├── resume/page.js        Experience + Education CRUD, resume title/competencies settings (new)
+│           ├── messages/page.js      Inbox — channel (WhatsApp/Email) + purpose, mark read/unread
+│           ├── posts/page.js         Curated social-post embeds — add/remove by URL (new)
+│           ├── settings/page.js      Profile/tagline/social links (incl. WhatsApp)/now-status/about bio/resume upload/"log out everywhere"
 │           ├── media/page.js         Upload + thumbnail grid + delete
 │           ├── analytics/page.js     Visits-over-time, top pages/referrers, countries
 │           └── activity/page.js      Audit log + "export site as JSON" button
 ├── components/
-│   ├── terminal/TerminalWindow.jsx   Reusable terminal/IDE chrome (traffic-light dots, tabs, line numbers)
+│   ├── terminal/TerminalWindow.jsx   Reusable terminal/IDE chrome — now a translucent glass panel (bg-term-panel/80 backdrop-blur-md)
 │   ├── code/tokens.jsx               Shared hand-styled syntax-highlight tokens (Cm/Kw/Ty/Str/Tag/Pu) + List/Section helpers
 │   ├── ui/Skeleton.jsx               SkeletonLine / SkeletonTerminalCard loading states
-│   ├── layout/                       Navbar, StatusBar, CookieConsent, PageviewTracker, SiteChrome (wires the last four together)
+│   ├── layout/                       Navbar (glass workspace-switcher pill), StatusBar, SocialFooter (dynamic socials incl. WhatsApp), CookieConsent, PageviewTracker, SiteChrome
 │   ├── effects/                      MatrixRain (canvas, toggleable), CursorTrail — both respect prefers-reduced-motion
-│   ├── profile/                      ProfileCard, ProfileTerminal (fetches Skills API), PhotoTerminal (avatar w/ graceful fallback), NowBadge, GithubStats
-│   ├── resume/ResumeTerminal.jsx     Formations/experience + resume download link
-│   ├── projects/                     FolderIcon, ProjectFolderCard, StatusBadge, SkeletonFolder, FileTree, status.js (shared color map)
+│   ├── profile/                      ProfileCard (terminal-chrome card, photo/contact/socials), SystemInfo (neofetch stack panel), AboutTerminal, SocialPosts, GithubStats, GithubRepoStats, GithubActivity, GithubContributions
+│   ├── resume/ResumeTerminal.jsx     Real Experience/Education/Skills/competencies from the API, Go-pseudocode styling
+│   ├── contact/ContactFlipCard.jsx   WhatsApp/Email 3D flip form (new)
+│   ├── projects/                     FolderTile (riced-desktop folder icon, hover float+glow), ProjectFolderCard, StatusBadge, SkeletonFolder, FileTree, status.js
 │   ├── charts/                       StatTile, BarChart, LineChart — hand-rolled inline SVG, no charting library
-│   ├── icons/SocialIcons.jsx         Hand-rolled GitHub/LinkedIn/X/Mail SVGs
+│   ├── icons/                        SocialIcons.jsx (Github/Linkedin/X/Whatsapp/Mail/Phone/Pin/Check SVGs), TechIcon.jsx (per-skill logo via react-icons, new)
 │   └── admin/                        AdminSection, Button, fields.jsx, DashboardNav, DashboardHeaderActions, ProjectForm, DocsEditor
-├── lib/api.js                        Fetch wrapper for the Express API — one export per resource (auth/projects/docs/skills/messages/settings/media/analytics/activity/contact)
+├── lib/api.js                        Fetch wrapper for the Express API — one export per resource (auth/projects/docs/skills/resume/messages/posts/settings/media/analytics/activity/github/contact)
 ├── proxy.js                          Next 16 "proxy" (formerly middleware) — redirects unauthenticated /admin/dashboard hits
 ├── next.config.js                    output: "standalone" for the prod Docker image
 ├── tailwind.config.js                Design tokens: term-bg/panel/red/gold/blue/green/white/silver
 ├── jsconfig.json                     "@/..." import alias
-├── public/avatar.jpg                 Not committed — drop a real photo here (see PhotoTerminal.jsx)
 ├── .env.local                        Local dev env (gitignored)
 ├── .env.local.example                Template for the above
 ├── AGENTS.md / CLAUDE.md              Auto-generated by `next dev` (Next 16) — API-shape warnings for AI agents, safe to commit
@@ -79,8 +84,8 @@ server/
 ├── src/
 │   ├── app.js                        Express app: Helmet, CORS, cookies, JSON body, static /uploads, routes, error handler
 │   ├── server.js                     Entry point, loads .env, starts listening
-│   ├── routes/                       auth, health, projects, docs (nested), skills, contact, messages,
-│   │                                  settings, media, analytics, export, activity — one file per resource
+│   ├── routes/                       auth, health, projects, docs (nested), skills, contact, messages, resume,
+│   │                                  posts, settings, media, analytics, export, activity, github — one file per resource
 │   ├── controllers/                  Matching controller per route file; every mutating one calls lib/audit.js
 │   ├── schemas/                      Zod schemas per resource, used by middleware/validate.js on every write route
 │   ├── middleware/
@@ -91,14 +96,17 @@ server/
 │   └── lib/
 │       ├── prisma.js                 Shared Prisma client instance
 │       ├── audit.js                  logAction() — writes an AuditLog row, never throws
-│       └── upload.js                 multer config: disk storage, mime allowlist, 10MB cap
+│       ├── upload.js                 multer config: disk storage, mime allowlist, 10MB cap
+│       └── notify.js                 Contact-form notifications (new) — WhatsApp Cloud API template send or Resend
+│                                       email depending on the channel picked; fire-and-forget, never blocks the response
 ├── uploads/                           Local disk storage for admin-uploaded media/resume (gitignored, .gitkeep tracked)
 ├── prisma/
-│   ├── schema.prisma                 AdminUser, Project, ProjectDoc, Skill, ContactMessage, Visit, SiteSetting, Media, AuditLog
+│   ├── schema.prisma                 AdminUser, Project, ProjectDoc, Skill, Experience, Education, SocialPost,
+│   │                                  ContactMessage, Visit, SiteSetting, Media, AuditLog
 │   ├── migrations/                   Generated by `prisma migrate dev`
 │   └── seed.js                       Admin user + 3 sample projects (w/ docs) + 12 starter skills, all idempotent
 ├── .env                              Real local secrets (gitignored — never commit)
-└── .env.example                      Template for the above
+└── .env.example                      Template for the above — incl. optional WHATSAPP_*/RESEND_*/GITHUB_TOKEN
 ```
 
 ## `infra/` — containers and reverse proxy
