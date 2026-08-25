@@ -38,8 +38,16 @@ export default function ProfileCard({ className = "" }) {
 
   return (
     <div
-      className={`flex flex-col items-center rounded-2xl border border-term-border bg-term-panel/80 p-8 backdrop-blur-md ${className}`}
+      className={`flex flex-col overflow-hidden rounded-2xl border border-term-border bg-term-panel/80 backdrop-blur-md ${className}`}
     >
+      <div className="flex shrink-0 items-center gap-2 border-b border-term-border bg-term-bg/60 px-5 py-3.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-term-red" />
+        <span className="h-2.5 w-2.5 rounded-full bg-term-gold" />
+        <span className="h-2.5 w-2.5 rounded-full bg-term-green" />
+        <span className="flex-1 text-center text-xs text-term-silver-dim">zsh &mdash; portfolio</span>
+      </div>
+
+      <div className="flex flex-1 flex-col items-center p-8">
       {s.profile_photo_url ? (
         // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded, arbitrary origin
         <img
@@ -118,6 +126,7 @@ export default function ProfileCard({ className = "" }) {
             <WhatsappIcon />
           </a>
         )}
+      </div>
       </div>
     </div>
   );

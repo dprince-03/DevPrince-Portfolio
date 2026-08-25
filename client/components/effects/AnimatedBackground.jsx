@@ -16,8 +16,8 @@ export default function AnimatedBackground() {
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    const LINK_DIST = 130;
-    const MOUSE_DIST = 130;
+    const LINK_DIST = 150;
+    const MOUSE_DIST = 150;
     const mouse = { x: -9999, y: -9999 };
     let particles = [];
     let animationFrame;
@@ -25,7 +25,7 @@ export default function AnimatedBackground() {
     function resize() {
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
-      const count = Math.min(70, Math.round((canvas.width * canvas.height) / 28000));
+      const count = Math.min(110, Math.round((canvas.width * canvas.height) / 16000));
       particles = Array.from({ length: count }, () => ({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
@@ -68,7 +68,7 @@ export default function AnimatedBackground() {
           const dy = particles[i].y - particles[j].y;
           const d = Math.sqrt(dx * dx + dy * dy);
           if (d < LINK_DIST) {
-            ctx.strokeStyle = `rgba(90,200,250,${0.14 * (1 - d / LINK_DIST)})`;
+            ctx.strokeStyle = `rgba(90,200,250,${0.34 * (1 - d / LINK_DIST)})`;
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
@@ -80,8 +80,8 @@ export default function AnimatedBackground() {
 
       for (const p of particles) {
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 1.7, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(220,235,255,0.7)";
+        ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(220,235,255,0.95)";
         ctx.fill();
       }
 
@@ -103,13 +103,13 @@ export default function AnimatedBackground() {
   }, []);
 
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <style>{`
         .bg-grid-floor {
           position: absolute; left: -200px; right: -200px; bottom: 64px; height: 760px;
           background-image:
-            repeating-linear-gradient(0deg, rgba(90,200,250,0.14) 0 1px, transparent 1px 60px),
-            repeating-linear-gradient(90deg, rgba(90,200,250,0.14) 0 1px, transparent 1px 60px);
+            repeating-linear-gradient(0deg, rgba(90,200,250,0.40) 0 1px, transparent 1px 60px),
+            repeating-linear-gradient(90deg, rgba(90,200,250,0.40) 0 1px, transparent 1px 60px);
           transform: perspective(700px) rotateX(62deg);
           transform-origin: bottom;
           -webkit-mask-image: linear-gradient(to top, black 0%, transparent 88%);

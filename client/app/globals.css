@@ -14,9 +14,9 @@ body {
 
 body {
   background-image:
-    radial-gradient(900px 500px at 15% 0%, rgba(74, 158, 255, 0.22), transparent 60%),
-    radial-gradient(800px 500px at 90% 10%, rgba(74, 158, 255, 0.12), transparent 60%),
-    radial-gradient(1000px 600px at 50% 100%, rgba(30, 64, 175, 0.18), transparent 60%);
+    radial-gradient(900px 500px at 15% 0%, rgba(30, 64, 175, 0.26), transparent 60%),
+    radial-gradient(800px 500px at 90% 10%, rgba(30, 64, 175, 0.14), transparent 60%),
+    radial-gradient(1000px 600px at 50% 100%, rgba(23, 37, 84, 0.22), transparent 60%);
   background-attachment: fixed;
 }
 
