@@ -1,14 +1,14 @@
 # Build context is the repo root (see docker-compose.prod.yml), so paths
 # below are relative to the repo root, not this file's directory.
 
-FROM node:20-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 COPY server/package.json server/package-lock.json ./
 RUN npm ci
 COPY server/ .
 RUN npx prisma generate
 
-FROM node:20-alpine AS runtime
+FROM node:26-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup -S app && adduser -S app -G app
