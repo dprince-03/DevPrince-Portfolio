@@ -150,3 +150,10 @@ AGENTS.md
 # Uploaded media (local disk storage for the admin media manager / resume)
 server/uploads/*
 !server/uploads/.gitkeep
+
+# Manually-installed SSL cert/key and one-off domain-validation files —
+# placed directly on the VPS, never committed.
+infra/nginx/ssl/*
+!infra/nginx/ssl/.gitkeep
+infra/nginx/pki-validation/*
+!infra/nginx/pki-validation/.gitkeep
