@@ -21,7 +21,11 @@ services:
     expose:
       - "5000"
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5000/api/health"]
+      # 127.0.0.1, not localhost: wget resolves "localhost" to the IPv6
+      # loopback first inside Alpine, which fails here since HOSTNAME=0.0.0.0
+      # binds IPv4-only (see the client healthcheck below for the case where
+      # this actually breaks).
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:5000/api/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,7 +50,12 @@ services:
     expose:
       - "3000"
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/"]
+      # 127.0.0.1, not localhost: HOSTNAME=0.0.0.0 above makes Next's server
+      # bind IPv4-only, but wget resolves "localhost" to the IPv6 loopback
+      # (::1) first inside Alpine and never falls back, so the healthcheck
+      # fails with "connection refused" even though the app is up and
+      # answering fine on IPv4.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/"]
       interval: 10s
       timeout: 5s
       retries: 5
